@@ -1,6 +1,7 @@
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -26,9 +27,20 @@ public class App extends JFrame{
 
     private List<Person> persons;
     enum PersonType{
-        CUSTOMER, CLERK, MANAGER
-    }
+        CUSTOMER, CLERK, MANAGER;
 
+    }
+    public PersonType stringTOPersonType(String s){
+        switch(s){
+            case "Customer":
+                return PersonType.CUSTOMER;
+            case "Clerk":
+                return PersonType.CLERK;
+            case "Manager":
+                return PersonType.MANAGER;
+        }
+        return null;
+    }
     public App() {
         initWindow();
         persons = new ArrayList<>();
@@ -99,21 +111,50 @@ public class App extends JFrame{
                 JOptionPane.showMessageDialog(null,exc.getMessage());
                 return;
             }
-            giveReward(num,(Employee)person);
+            giveReward(num);
 
 
         });
         rbCustomer.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                tfMonths.setEditable(rbCustomer.isSelected());
-                tfSalary.setEditable(rbCustomer.isSelected());
+                tfMonths.setEditable(!rbCustomer.isSelected());
+                tfSalary.setEditable(!rbCustomer.isSelected());
+            }
+        });
+        btnSavePerson.addActionListener(e -> {
+            try(BufferedWriter writer = new BufferedWriter(new FileWriter("src/Database/database.csv",true))){
+                for(Person p : persons){
+                    writer.write(p.getClassName() + ","+p.getName() + "," + p.getAge());
+                    if(p instanceof Employee){
+                        writer.write(","+((Employee) p).getMonths_worked()+ "," +((Employee) p).getSalary());
+                    }
+                    writer.write("\n");
+                }
+            } catch (IOException exc){
+                System.out.println("Boohoo File Error");
+            }
+        });
+        btnLoadPerson.addActionListener(e -> {
+            try(BufferedReader reader = new BufferedReader(new FileReader(("src/Database/database.csv")))){
+                String line;
+                persons.clear();
+                taPersons.setText("");
+                while((line = reader.readLine()) != null){
+                    String[] values = line.split(",");
+                    if(values[0].equals("Customer")){
+                        persons.add(personFactory(stringTOPersonType(values[0]),values[1], Integer.parseInt(values[2]),0,0));
+                    } else {
+                        persons.add(personFactory(stringTOPersonType(values[0]),values[1], Integer.parseInt(values[2]),Integer.parseInt(values[3]),Double.parseDouble(values[4])));
+                    }
+                    appendTextArea();
+                }
+            } catch (IOException exc){
+
             }
         });
     }
-    public void giveReward(int num, Employee employee){
-        JOptionPane.showMessageDialog(null,"Thirteenth month of " + employee.getName() + ": " + employee.thirteenthmonth());
-    }
+
     public void appendTextArea(){
         Person person = persons.get(persons.size() - 1);
         String personType = null;
@@ -123,6 +164,23 @@ public class App extends JFrame{
 
         String age = String.valueOf(person.getAge());
         taPersons.append(persons.size() + ". " + personType + " - " + person.getName() + " (" + person.getAge() + ") \n");
+    }
+    public Person personFactory(PersonType type, String name, int age, int months_worked, double salary){
+        Person person;
+        switch(type){
+            case CLERK:
+                person = new Clerk(name,age,months_worked,salary);
+                break;
+            case MANAGER:
+                person = new Manager(name,age,months_worked,salary);
+                break;
+            case CUSTOMER:
+                person = new Customer(name, age);
+                break;
+            default:
+                throw new IllegalArgumentException("Huh?");
+        }
+        return person;
     }
     public Person personFactory(PersonType type){
         Person person = null;
@@ -214,7 +272,8 @@ public class App extends JFrame{
         App app = new App();
     }
 
-    static void giveReward(int n) {
-
+    public void giveReward(int n) {
+        Employee employee = (Employee) persons.get(n - 1);
+        JOptionPane.showMessageDialog(null,"Thirteenth month of " + employee.getName() + ": " + employee.thirteenthmonth());
     }
 }

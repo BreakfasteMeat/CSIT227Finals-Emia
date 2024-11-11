@@ -16,8 +16,11 @@ public abstract class Person {
         return age;
     }
 
+    public abstract String getClassName();
+
     @Override
     public String toString() {
         return "Hello, my name is " + name + ". ";
     }
+
 }
