@@ -42,6 +42,7 @@ public class App extends JFrame{
         return null;
     }
     public App() {
+        super("App Forms");
         initWindow();
         persons = new ArrayList<>();
         btnSave.addActionListener(e -> {
@@ -264,7 +265,7 @@ public class App extends JFrame{
     public void initWindow(){
         this.setContentPane(pnlMain);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        this.setSize(600,400);
+        this.setSize(600,500);
         this.setVisible(true);
 
     }
