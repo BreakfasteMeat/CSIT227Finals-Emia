@@ -1,8 +1,11 @@
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class App {
+public class App extends JFrame{
     private JPanel pnlMain;
     private JRadioButton rbCustomer;
     private JRadioButton rbClerk;
@@ -22,14 +25,193 @@ public class App {
     private JButton btnReward;
 
     private List<Person> persons;
+    enum PersonType{
+        CUSTOMER, CLERK, MANAGER
+    }
 
     public App() {
+        initWindow();
         persons = new ArrayList<>();
-        // TODO add implementations for all milestones here
+        btnSave.addActionListener(e -> {
+            PersonType personType = getPersonType();
+            Person newPerson = personFactory(personType);
+            if(newPerson == null){
+                return;
+            }
+            persons.add(newPerson);
+            tfAge.setText("");
+            tfSalary.setText("");
+            tfMonths.setText("");
+            tfName.setText("");
+            appendTextArea();
+        });
+        btnClear.addActionListener(e -> {
+            tfAge.setText("");
+            tfSalary.setText("");
+            tfMonths.setText("");
+            tfName.setText("");
+        });
+        btnLoad.addActionListener(e -> {
+            int num;
+            try{
+                num = Integer.parseInt(tfLoad.getText());
+                if(num > persons.size()) throw new NumberFormatException();
+            } catch (NumberFormatException exc){
+                JOptionPane.showMessageDialog(null,"Please input valid number found in the list");
+                return;
+            }
+            Person person = persons.get(num - 1);
+            tfName.setText(person.getName());
+            tfAge.setText(String.valueOf(person.getAge()));
+
+            if(person instanceof Customer){
+                rbCustomer.setSelected(true);
+            } else if(person instanceof Manager){
+                rbManager.setSelected(true);
+                tfSalary.setText(String.valueOf(((Employee)person).getSalary()));
+                tfMonths.setText(String.valueOf(((Employee)person).getMonths_worked()));
+            } else if(person instanceof Clerk){
+                rbClerk.setSelected(true);
+                tfSalary.setText(String.valueOf(((Employee)person).getSalary()));
+                tfMonths.setText(String.valueOf(((Employee)person).getMonths_worked()));
+            }
+        });
+        btnSayHi.addActionListener(e -> {
+            for(Person p : persons){
+                System.out.println(p);
+            }
+        });
+        btnReward.addActionListener(e -> {
+            int num;
+            try{
+                num = Integer.parseInt(tfLoad.getText());
+                if(num > persons.size()) throw new NumberFormatException();
+            } catch (NumberFormatException exc){
+                tfLoad.setText("");
+                JOptionPane.showMessageDialog(null,"Please input valid number found in the list");
+                return;
+            }
+            Person person = persons.get(num - 1);
+            try{
+                if(person instanceof Customer) throw new IllegalArgumentException("Person selected is not an Employee");
+            } catch (IllegalArgumentException exc){
+                tfLoad.setText("");
+                JOptionPane.showMessageDialog(null,exc.getMessage());
+                return;
+            }
+            giveReward(num,(Employee)person);
+
+
+        });
+        rbCustomer.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                tfMonths.setEditable(rbCustomer.isSelected());
+                tfSalary.setEditable(rbCustomer.isSelected());
+            }
+        });
+    }
+    public void giveReward(int num, Employee employee){
+        JOptionPane.showMessageDialog(null,"Thirteenth month of " + employee.getName() + ": " + employee.thirteenthmonth());
+    }
+    public void appendTextArea(){
+        Person person = persons.get(persons.size() - 1);
+        String personType = null;
+        if(person instanceof Clerk) personType = "Clerk";
+        else if(person instanceof Manager) personType = "Manager";
+        else if(person instanceof Customer) personType = "Customer";
+
+        String age = String.valueOf(person.getAge());
+        taPersons.append(persons.size() + ". " + personType + " - " + person.getName() + " (" + person.getAge() + ") \n");
+    }
+    public Person personFactory(PersonType type){
+        Person person = null;
+        String name;
+        int age;
+        int months_worked;
+        double salary;
+        try {
+            name = tfName.getText();
+            if(Objects.equals(name, "")) throw new IllegalArgumentException("Name should not be empty");
+        } catch(IllegalArgumentException exc){
+            JOptionPane.showMessageDialog(null,exc.getMessage());
+            return null;
+        }
+        try{
+            age = Integer.parseInt(tfAge.getText());
+            if(age < 0) throw new IllegalArgumentException("Negative age is not allowed");
+        } catch (NumberFormatException exc){
+            JOptionPane.showMessageDialog(null,"Please input valid age");
+            tfAge.setText("");
+            return null;
+        } catch (IllegalArgumentException exc){
+            JOptionPane.showMessageDialog(null,exc.getMessage());
+            tfAge.setText("");
+            return null;
+        }
+        if(type != PersonType.CUSTOMER) {
+            try {
+                months_worked = Integer.parseInt(tfMonths.getText());
+                if (months_worked < 0) throw new IllegalArgumentException("Negative number of months is not allowed");
+            } catch (NumberFormatException exc) {
+                JOptionPane.showMessageDialog(null, "Please input valid number of months");
+                tfMonths.setText("");
+                return null;
+            } catch (IllegalArgumentException exc) {
+                JOptionPane.showMessageDialog(null, exc.getMessage());
+                tfMonths.setText("");
+                return null;
+            }
+            try {
+                salary = Double.parseDouble(tfSalary.getText());
+                if (salary < 0) throw new IllegalArgumentException("Negative salary is not allowed");
+            } catch (NumberFormatException exc) {
+                JOptionPane.showMessageDialog(null, "Please input valid salary");
+                tfSalary.setText("");
+                return null;
+            } catch (IllegalArgumentException exc) {
+                JOptionPane.showMessageDialog(null, exc.getMessage());
+                tfSalary.setText("");
+                return null;
+            }
+        }
+        switch(type){
+            case CLERK:
+                person = new Clerk(tfName.getText(), Integer.parseInt(tfAge.getText()),Integer.parseInt(tfMonths.getText()),Double.parseDouble(tfSalary.getText()));
+                break;
+            case MANAGER:
+                person = new Manager(tfName.getText(), Integer.parseInt(tfAge.getText()),Integer.parseInt(tfMonths.getText()),Double.parseDouble(tfSalary.getText()));
+                break;
+            case CUSTOMER:
+                person = new Customer(tfName.getText(), Integer.parseInt(tfAge.getText()));
+                break;
+            default:
+                throw new IllegalArgumentException("Huh?");
+        }
+        return person;
+    }
+    public PersonType getPersonType(){
+        if(rbCustomer.isSelected()){
+            return PersonType.CUSTOMER;
+        } else if(rbClerk.isSelected()){
+            return PersonType.CLERK;
+        } else if(rbManager.isSelected()){
+            return PersonType.MANAGER;
+        } else {
+            System.out.println("U crazy?");
+            return null;
+        }
+    }
+    public void initWindow(){
+        this.setContentPane(pnlMain);
+        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        this.setSize(600,400);
+        this.setVisible(true);
+
     }
 
     public static void main(String[] args) {
-        // add here how to make GUI visible
+        App app = new App();
     }
 
     static void giveReward(int n) {
