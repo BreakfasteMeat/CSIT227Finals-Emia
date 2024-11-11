@@ -6,7 +6,6 @@ public abstract class Employee extends Person{
         super(name, age);
         this.months_worked = months_worked;
         this.salary = salary;
-        System.out.println(salary);
     }
 
     public double thirteenthmonth(){

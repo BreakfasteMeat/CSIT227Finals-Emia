@@ -67,7 +67,7 @@ public class App extends JFrame{
             int num;
             try{
                 num = Integer.parseInt(tfLoad.getText());
-                if(num > persons.size()) throw new NumberFormatException();
+                if(num > persons.size() || num < 0) throw new NumberFormatException();
             } catch (NumberFormatException exc){
                 JOptionPane.showMessageDialog(null,"Please input valid number found in the list");
                 return;
@@ -123,13 +123,14 @@ public class App extends JFrame{
             }
         });
         btnSavePerson.addActionListener(e -> {
-            try(BufferedWriter writer = new BufferedWriter(new FileWriter("src/Database/database.csv",true))){
+            try(BufferedWriter writer = new BufferedWriter(new FileWriter("src/Database/database.csv",false))){
+                writer.write("");
                 for(Person p : persons){
-                    writer.write(p.getClassName() + ","+p.getName() + "," + p.getAge());
+                    writer.append(p.getClassName() + ","+p.getName() + "," + p.getAge());
                     if(p instanceof Employee){
-                        writer.write(","+((Employee) p).getMonths_worked()+ "," +((Employee) p).getSalary());
+                        writer.append(","+((Employee) p).getMonths_worked()+ "," +((Employee) p).getSalary());
                     }
-                    writer.write("\n");
+                    writer.append("\n");
                 }
             } catch (IOException exc){
                 System.out.println("Boohoo File Error");
